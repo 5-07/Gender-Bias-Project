@@ -1,13 +1,11 @@
 from datasets import load_dataset
+import pandas as pd
 
-# Load the Bias in Bios dataset
+# Load dataset
 dataset = load_dataset("LabHC/bias_in_bios")
 
-# Print dataset info
-print(dataset)
+# Convert train split to pandas
+df = dataset["train"].to_pandas()
 
-# Show a sample bio
-example = dataset["train"][0]
-print("Bio:", example["bio"])
-print("Gender:", example["gender"])
-print("Title:", example["title"])
+# Show some rows
+print(df.sample(5))
