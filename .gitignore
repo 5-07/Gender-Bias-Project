@@ -8,3 +8,5 @@ __pycache__/
 .cache/
 huggingface/
 .DS_Store
+results/
+trained_model/
