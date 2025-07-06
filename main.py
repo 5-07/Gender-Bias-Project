@@ -1,11 +1,7 @@
-from datasets import load_dataset
-import pandas as pd
+from data_utils import explore_data, create_counterfactual_pairs
 
-# Load dataset
-dataset = load_dataset("LabHC/bias_in_bios")
+# 1. Explore the data
+explore_data()
 
-# Convert train split to pandas
-df = dataset["train"].to_pandas()
-
-# Show some rows
-print(df.sample(5))
+# 2. Create counterfactual pairs
+create_counterfactual_pairs()
