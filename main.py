@@ -1,20 +1,56 @@
-from data_utils import explore_data, create_counterfactual_pairs
-from model_utils import load_bios_pairs, create_label_mapping, train_model
+# main.py
+from data_utils import load_pairs
+from model_utils import load_model, predict_in_batches
+from analysis_utils import compute_metrics, save_results
+import plots
 
-# Step 1: Explore
-explore_data()
+MODEL_PATH = "./trained_model"
+CSV_PATH = "bios_pairs.csv"
+OUTPUT_CSV = "counterfactual_results.csv"
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# Step 2: Create counterfactuals
-create_counterfactual_pairs()
+# Load data
+df_pairs = load_pairs(CSV_PATH, n_samples=1000)
 
-# Step 3: Load CSV
-df = load_bios_pairs()
+# Load model
+model, tokenizer = load_model(MODEL_PATH, DEVICE)
 
-# Sample fewer rows coz my lappy crashed
-df = df.sample(1000, random_state=42)
+# Predict
+preds_orig, conf_orig = predict_in_batches(
+    df_pairs["original_text"].tolist(),
+    model,
+    tokenizer,
+    batch_size=16,
+    device=DEVICE
+)
 
-# Step 4: Map labels
-df, prof2id, id2prof = create_label_mapping(df)
+preds_cf, conf_cf = predict_in_batches(
+    df_pairs["swapped_text"].tolist(),
+    model,
+    tokenizer,
+    batch_size=16,
+    device=DEVICE
+)
 
-# Step 5: Train model
-model, tokenizer = train_model(df)
+# Metrics
+flipped, flip_rate, conf_diff, avg_shift = compute_metrics(
+    preds_orig, preds_cf, conf_orig, conf_cf
+)
+
+print(f"Flip Rate: {flip_rate:.4f}")
+print(f"Average Confidence Shift: {avg_shift:.4f}")
+
+# Save results
+save_results(
+    df_pairs,
+    preds_orig,
+    conf_orig,
+    preds_cf,
+    conf_cf,
+    flipped,
+    conf_diff,
+    OUTPUT_CSV
+)
+
+# Run plots
+plots.plot_all(OUTPUT_CSV)

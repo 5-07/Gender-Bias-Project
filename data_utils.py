@@ -1,62 +1,56 @@
-from datasets import load_dataset
-import pandas as pd
-import re
+# main.py
+from data_utils import load_pairs
+from model_utils import load_model, predict_in_batches
+from analysis_utils import compute_metrics, save_results
+import plots
 
-# Gender swap dictionary
-swap_dict = {
-    "he": "she",
-    "she": "he",
-    "his": "her",
-    "her": "his",
-    "him": "her",
-    "man": "woman",
-    "woman": "man",
-    "father": "mother",
-    "mother": "father",
-    "boy": "girl",
-    "girl": "boy",
-    "male": "female",
-    "female": "male",
-    "himself": "herself",
-    "herself": "himself"
-}
+MODEL_PATH = "./trained_model"
+CSV_PATH = "bios_pairs.csv"
+OUTPUT_CSV = "counterfactual_results.csv"
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-def explore_data():
-    dataset = load_dataset("LabHC/bias_in_bios")
-    df = dataset["train"].to_pandas()
+# Load data
+df_pairs = load_pairs(CSV_PATH, n_samples=1000)
 
-    # Print sample rows
-    print(df.sample(5))
-    print("Number of professions:", df["profession"].nunique())
-    print("Gender balance:")
-    print(df["gender"].value_counts())
+# Load model
+model, tokenizer = load_model(MODEL_PATH, DEVICE)
 
-def swap_gender_terms(text, swap_dict):
-    pattern = re.compile(r'\b(' + '|'.join(swap_dict.keys()) + r')\b', re.IGNORECASE)
-    
-    def replacer(match):
-        word = match.group(0)
-        swapped = swap_dict.get(word.lower(), word)
-        return swapped.capitalize() if word[0].isupper() else swapped
-    
-    return pattern.sub(replacer, text)
+# Predict
+preds_orig, conf_orig = predict_in_batches(
+    df_pairs["original_text"].tolist(),
+    model,
+    tokenizer,
+    batch_size=16,
+    device=DEVICE
+)
 
-def create_counterfactual_pairs():
-    dataset = load_dataset("LabHC/bias_in_bios")
-    df = dataset["train"].to_pandas()
+preds_cf, conf_cf = predict_in_batches(
+    df_pairs["swapped_text"].tolist(),
+    model,
+    tokenizer,
+    batch_size=16,
+    device=DEVICE
+)
 
-    pairs = []
+# Metrics
+flipped, flip_rate, conf_diff, avg_shift = compute_metrics(
+    preds_orig, preds_cf, conf_orig, conf_cf
+)
 
-    for idx, row in df.iterrows():
-        original = row["hard_text"]
-        swapped = swap_gender_terms(original, swap_dict)
-        pairs.append({
-            "original_text": original,
-            "swapped_text": swapped,
-            "profession": row["profession"],
-            "gender": row["gender"]
-        })
+print(f"Flip Rate: {flip_rate:.4f}")
+print(f"Average Confidence Shift: {avg_shift:.4f}")
 
-    pairs_df = pd.DataFrame(pairs)
-    pairs_df.to_csv("bios_pairs.csv", index=False)
-    print("Saved bios_pairs.csv with counterfactual pairs!")
+# Save results
+save_results(
+    df_pairs,
+    preds_orig,
+    conf_orig,
+    preds_cf,
+    conf_cf,
+    flipped,
+    conf_diff,
+    OUTPUT_CSV
+)
+
+# Run plots
+plots.plot_all(OUTPUT_CSV)
