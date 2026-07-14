@@ -84,6 +84,18 @@ Each module has a single responsibility. `main.py` orchestrates the full pipelin
 | `confidence_violin_by_category.png` | STEM vs. Non-STEM confidence shift comparison |
 | `flip_rate_heatmap.png` | Flip rates across professions and STEM categories |
 
+
+![Flip rate by profession](flip_rate_by_profession.png)
+*Flip rate across all 28 professions*
+
+![Flip rate heatmap](flip_rate_heatmap.png)
+*Flip rates across professions and STEM categories*
+
+![Confidence shift histogram](confidence_shift_histogram.png)
+*Distribution of confidence change magnitudes*
+
+![Confidence shift by category](confidence_violin_by_category.png)
+*STEM vs. Non-STEM confidence shift comparison*
 ---
 
 ## Key Finding
