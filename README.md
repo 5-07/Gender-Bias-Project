@@ -4,7 +4,7 @@
 
 This project investigates gender bias in a DistilBERT-based profession classifier by measuring how swapping gendered language markers in professional biographies changes model predictions and confidence scores — across 28 professions and two categories (STEM vs. Non-STEM).
 
-Detailed Documentation: [https://github.com/5-07/Gender-Bias-Project/blob/main/gender_bias_narrative.pdf]
+**Detailed Documentation:** [gender_bias_narrative.pdf](https://github.com/5-07/Gender-Bias-Project/blob/main/gender_bias_narrative.pdf)
 ---
 
 ## Research Question
